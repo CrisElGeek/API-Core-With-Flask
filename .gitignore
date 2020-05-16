@@ -1,0 +1,10 @@
+._*
+.DS_Store
+*.swp
+**/._*
+**/.DS_Store
+**/*.swp
+**/node_modules/
+/logs/
+**/__pycache__/
+envpy35/
