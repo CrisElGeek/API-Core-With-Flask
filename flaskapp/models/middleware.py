@@ -6,6 +6,9 @@ class Models:
   def __init__(self, params, payload = None):
     self.request = request.args
     self.fields = params["fields"]
+    self.filters = []
+    if 'filters' in params:
+      self.filters = params["filters"]
     self.payload = payload
     self.params = {
       "database": params["database"],
@@ -17,7 +20,6 @@ class Models:
   def Get(self, id = None):
     self.params["fields"] = self.SetFields()
     self.SetParms()
-    print(id)
     if id:
       filter = self.setFilters("eq:{}".format(id), "id")
       self.params["filters"].append(filter)
@@ -33,7 +35,18 @@ class Models:
       elif key != "fields":
         filter = self.setFilters(value, key)
         if filter:
-          self.params["filters"].append(filter)
+          filters.append(filter)
+    if self.filters:
+      for f in self.filters:
+        exist = False
+        for value in filters:
+          if value == f:
+            exist = True
+            return
+        if not exist:
+          filter = self.SetLocalFilters(f)
+          filters.append(filter)
+    self.params["filters"] = filters
 
  # Crea una lista (Array) de todos los campos de la base de datos a consultar
   def SetFields(self):
@@ -74,6 +87,13 @@ class Models:
             f = field["field"]
           fields.update({key: [value, f]})
     return fields
+
+  def SetLocalFilters(self, item):
+    return {
+      "field": item["field"],
+      "value": item["value"],
+      "operator": item["operator"]
+    }
 
   def setFilters(self, filter, field):
     params = filter.split(":")

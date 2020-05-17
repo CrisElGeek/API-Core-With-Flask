@@ -1,8 +1,8 @@
 from flaskapp import db
 
 class GetModel:
-  def execute(self, params):
-    self.params = params
+  def execute(self, _params):
+    self.params = _params
     fields = self.fields()
     self.parameters = ()
     filters = self.filters()
