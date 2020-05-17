@@ -7,7 +7,6 @@ class GetModel:
     self.parameters = ()
     filters = self.filters()
     self.qry = "SELECT " + fields + " FROM " + self.params["database"] + filters
-    print(self.qry)
     return self.Query()
 
   def Query(self):

@@ -31,19 +31,39 @@ rules = {
 
 @users.route('/api/v1/users/', methods=['GET'])
 def UserList():
-  results = Models(get_params)
-  res = results.Get()
-  return jsonify(res), res["code"]
+  bearer = request.headers.get('Authorization')
+  auth = JWTAuth(bearer).decode()
+  if auth and auth["role"] <= 3:
+    results = Models(get_params)
+    res = results.Get()
+    return jsonify(res), res["code"]
+  else:
+    return jsonify({
+      "message": "You are not authorized to make this action"
+    }), 401
 
 @users.route('/api/v1/users/<int:id>', methods=['GET'])
 def UserView(id):
-  results = Models(get_params)
-  res = results.Get(id)
-  return jsonify(res), res["code"]
+  bearer = request.headers.get('Authorization')
+  auth = JWTAuth(bearer).decode()
+  if auth and auth["role"] >= 1:
+    if auth["role"] > 3:
+      id = auth["id"]
+    results = Models(get_params)
+    res = results.Get(id)
+    return jsonify(res), res["code"]
+  else:
+    return jsonify({
+      "message": "You are not authorized to make this action"
+    }), 401
 
 @users.route('/api/v1/users/add', methods=['POST'])
 def UserAdd():
+  bearer = request.headers.get('Authorization')
+  auth = JWTAuth(bearer).decode()
   data = request.get_json()
+  if not auth or auth["role"] > 3:
+    data["role_id"] = 5
   results = Models(get_params, data)
   payload = results.Params(True)
   rules["password"] = "required|min:6"
@@ -52,9 +72,10 @@ def UserAdd():
     ph = PasswordHasher()
     payload["password"][0] = ph.hash(payload["password"][0])
     r = results.Post(payload)
-    # TODO: DEFINIR LOS PERMISOS PARA ASIGNAR ROLES
-    # TODO: SOLO DEVOLVER EL JWT CUANDO ES USUARIO NUEVO QUE SE REGISTRA POR SI MISMO
-    auth = JWTAuth(payload, r["data"]["id"]).encode()
-    return jsonify({"bearer": auth}), r["code"]
+    if not auth or auth["role"] > 3:
+      bearer = JWTAuth(payload, r["data"]["id"]).encode()
+      return jsonify({"bearer": bearer}), r["code"]
+    else:
+      return jsonify(r), r["code"]
   else:
     return jsonify(errors), 400

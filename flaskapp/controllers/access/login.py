@@ -2,6 +2,7 @@ from flask import jsonify, Blueprint, request
 from flaskapp.models.middleware import Models
 from flaskapp.libs.form_validation import Validate
 from argon2 import PasswordHasher
+from flaskapp.libs.jwt import JWTAuth
 import sys
 
 access = Blueprint('access', __name__)
@@ -9,8 +10,15 @@ access = Blueprint('access', __name__)
 get_params = {
   "database": "users u",
   "fields": {
+    "id": {"field": "u.id", "protected": True},
+    "first_name": {"field": "u.first_name"},
+    "last_name": {"field": "u.last_name"},
     "email": {"field": "u.email"},
-    "password": {"field": "u.password"}
+    "phone": {"field": "u.phone"},
+    "status_id": {"field": "u.status_id"},
+    "password": {"field": "u.password"},
+    "role_id": {"field": "u.role_id"},
+    "permissions": {"field": "u.permissions"}
   },
   "filters": []
 }
@@ -43,10 +51,17 @@ def login():
           "code": 401
         }), 401
         sys.exit()
+      userInfo = {
+        "first_name": [res["data"][0]["first_name"]],
+        "last_name": [res["data"][0]["last_name"]],
+        "role_id": [res["data"][0]["role_id"]],
+        "email": [res["data"][0]["email"]]
+      }
+      auth = JWTAuth(userInfo, res["data"][0]["id"]).encode()
       return jsonify({
-        "message": "Login Correct",
-        "code": 201 
-      }), 201
+        "bearer": auth,
+        "message": "Successfully logged In"
+        }), res["code"]
     else:
       return jsonify(res), res["code"]
   else:
