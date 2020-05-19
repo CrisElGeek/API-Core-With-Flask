@@ -1,12 +1,16 @@
 from flaskapp import db
+from flaskapp.models.shared import SharedComponents
 
 class GetModel:
   def execute(self, _params):
     self.params = _params
     fields = self.fields()
     self.parameters = ()
-    filters = self.filters()
-    self.qry = "SELECT " + fields + " FROM " + self.params["database"] + filters
+    response = SharedComponents().filters(self.params["filters"], self.parameters)
+    filters = response["filters"]
+    joins = self.joins()
+    self.parameters = response["parameters"]
+    self.qry = "SELECT " + fields + " FROM " + self.params["database"] + joins + filters
     return self.Query()
 
   def Query(self):
@@ -32,19 +36,11 @@ class GetModel:
     if len(string) == 0:
       string = "*"
     return string
-  
-  def filters(self):
+
+  def joins(self):
+    # NOTE: CONTINUAR AQUI EXISTE ALGUN PROBLEMA CON LA CREACION DEL STRING DE JOINS
+    print(self.params["joins"])
     string = ""
-    for filter in self.params["filters"]:
-      if filter["operator"] == "IS NULL" or filter["operator"] == "IS NOT NULL":
-        f = filter["field"] + " " + filter["operator"]
-      elif filter["operator"] in ["=", ">", "<", ">=", "<=", "!=", "IS", "IS NOT", "IN", "NOT IN"]:
-        f = filter["field"] + " " + filter["operator"] + " %s"
-        self.parameters = self.parameters + (filter["value"], )
-      elif filter["operator"] == "LIKE" or filter["operator"] == "NOT LIKE":
-        f = filter["field"] + " " + filter["operator"] + " %s"
-        self.parameters = self.parameters + ("%" + filter["value"] + "%", )
-      string = string + f + " AND "
-    if len(string) > 0:
-      string = " WHERE " + string.rstrip(" AND ")
+    for join in self.params["joins"]:
+      string +=  "JOIN " + join["table"] + " ON" + join["match"][0] + " = " + join["match"][1] + " "
     return string

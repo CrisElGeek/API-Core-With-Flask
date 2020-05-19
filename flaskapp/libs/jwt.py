@@ -24,17 +24,14 @@ class JWTAuth:
     self.algorithm = 'RS256'
 
   def encode(self):
-    # Load the key we created
     private = open("flaskapp/keys/id_rsa").read()
     return jwt.encode(self.message, private, algorithm=self.algorithm).decode('utf-8')
   
   def decode(self):
-    # Load the public key to run another test...
-    with open("flaskapp/keys/id_rsa.pub", "rb") as key_file:
-      public_key = open("flaskapp/keys/id_rsa.pub").read()
+    public_key = open("flaskapp/keys/id_rsa.pub").read()
+    result = None
+    try:
+      result = jwt.decode(self.bearer, public_key, algorithms=self.algorithm)
+    except:
       result = None
-      try:
-        result = jwt.decode(self.bearer, public_key, algorithms=self.algorithm)
-      except:
-        result = None
-      return result
+    return result

@@ -2,6 +2,8 @@ import re
 from flaskapp import db
 
 class Validate:
+  def __init__(self, id = None):
+    self.rowId = id
   def execute(self, payload, rules):
     self.errors = []
     for key, string in rules.items():
@@ -78,7 +80,7 @@ class Validate:
     
   def isUnique(self, table, field, value):
     cur = db.connection.cursor()
-    cur.execute("SELECT COUNT(*) rows FROM " + table + " WHERE " + field + " = '" + str(value) + "'")
+    cur.execute("SELECT COUNT(*) rows FROM " + table + " WHERE " + field + " = '" + str(value) + "' AND id != '" + str(self.rowId) + "'")
     result = cur.fetchone()
     if(result["rows"] > 0):
       return False

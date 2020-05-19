@@ -1,25 +1,30 @@
 from flask import jsonify, request
 from flaskapp.models.get import GetModel
 from flaskapp.models.post import PostModel
+from flaskapp.models.put import PutModel
 
 class Models:
   def __init__(self, params, payload = None):
     self.request = request.args
     self.fields = params["fields"]
     self.filters = []
+    self.joins = []
     if 'filters' in params:
       self.filters = params["filters"]
+    if 'joins' in params:
+      self.joins = params["joins"]
     self.payload = payload
     self.params = {
       "database": params["database"],
       "fields": [],
       "filters": [],
-      "sort": []
+      "sort": [],
+      "joins": []
     }
   # GET
   def Get(self, id = None):
     self.params["fields"] = self.SetFields()
-    self.SetParms()
+    self.params["filters"] = self.SetParms()
     if id:
       filter = self.setFilters("eq:{}".format(id), "id")
       self.params["filters"].append(filter)
@@ -46,7 +51,7 @@ class Models:
         if not exist:
           filter = self.SetLocalFilters(f)
           filters.append(filter)
-    self.params["filters"] = filters
+    return filters
 
  # Crea una lista (Array) de todos los campos de la base de datos a consultar
   def SetFields(self):
@@ -123,4 +128,10 @@ class Models:
           "field": param["field"],
           "value": value,
           "operator": operator
-    }
+        }
+
+  # PUT
+  def Put(self, id, payload):
+    filter = self.setFilters("eq:{}".format(id), "id")
+    self.params["filters"].append(filter)
+    return PutModel().execute(self.params, payload)

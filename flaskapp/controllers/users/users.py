@@ -16,8 +16,16 @@ get_params = {
     "status_id": {"field": "u.status_id"},
     "password": {"field": "u.password", "secured": True},
     "role_id": {"field": "u.role_id"},
-    "permissions": {"field": "u.permissions"}
-  }
+    "permissions": {"field": "u.permissions"},
+    "role_name": {"field": "r.role_name", "protected": True},
+    "role_slug": {"field": "r.role_slug", "protected": True},
+  },
+  "joins": [
+    {
+      "table": "roles r",
+      "match": ["r.id", "u.role_id"]
+    }
+  ]
 }
 
 rules = {
@@ -79,3 +87,22 @@ def UserAdd():
       return jsonify(r), r["code"]
   else:
     return jsonify(errors), 400
+
+@users.route('/api/v1/users/update/<int:id>', methods=['PUT'])
+def UserUpdate(id):
+  bearer = request.headers.get('Authorization')
+  auth = JWTAuth(bearer).decode()
+  if auth and auth["role"] >= 1:
+    data = request.get_json()
+    results = Models(get_params, data)
+    payload = results.Params()
+    errors = Validate(id).execute(payload, rules)
+    if len(errors) == 0:
+      r = results.Put(id, payload)
+      return jsonify(r), r["code"]
+    else:
+      return jsonify(errors), 400
+  else:
+    return jsonify({
+      "message": "You are not authorized to make this action"
+    }), 401
